@@ -34,6 +34,7 @@ fn main() -> ort::Result<()> {
 
     // Postprocess inference output tensor
     let post_process_start = Instant::now();
+    let mut probabilities: Option<Vec<f32>> = None;
     outputs.get("Plus214_Output_0").map_or_else(
         || eprintln!("Output tensor 'Plus214_Output_0' not found"),
         |output_tensor| {
@@ -41,18 +42,24 @@ fn main() -> ort::Result<()> {
                 |err| eprintln!("Failed to extract tensor: {:?}", err),
                 |logits: ArrayBase<ndarray::ViewRepr<&f32>, Dim<ndarray::IxDynImpl>>| {
                     println!("Logits: {:?}", logits);
-                    postprocess(logits.view());
+                    probabilities = postprocess(logits.view());
                 }
             )
         }
     );
-
     let post_process_duration = post_process_start.elapsed();
+
+    if let Some(probabilities) = probabilities {
+        log_probabilities(&probabilities);
+    } else {
+        eprintln!("Failed to process logits or no probabilities found.");
+    }
+
     let total_duration = start_time.elapsed();
     println!("Session Setup time: {:.2?}", setup_duration);
     println!("Preprocessing time: {:.2?}", preprocess_duration);
     println!("Inference time: {:.2?}", infer_duration);
-    println!("Post-processing time: {:.2?}", post_process_duration);
+    println!("Postprocessing time: {:.2?}", post_process_duration);
     println!("Aggregated Duration Without Setup: {:.2?}", preprocess_duration + infer_duration + post_process_duration);
     println!("Total application runtime: {:.2?}", total_duration);
 
@@ -73,29 +80,13 @@ fn preprocess_image(image_path: &str) -> ArrayBase<OwnedRepr<f32>, Dim<[usize; 4
     tensor
 }
 
-fn postprocess(logits: ArrayViewD<f32>) {
-    if logits.shape() != [1, 10] {
-        eprintln!("Unexpected shape of logits: {:?}", logits.shape());
-        return;
-    }
-
-    if let Some(logits) = logits.as_slice() {
-        // Calculate probabilities using softmax
-        let probabilities = softmax(logits);
-
-        // Print probabilities for each digit
-        for (i, &prob) in probabilities.iter().enumerate() {
-            println!("Digit {}: Probability {:.6}", i, prob);
+fn postprocess(logits: ArrayViewD<f32>) -> Option<Vec<f32>> {
+    match logits.as_slice() {
+        Some(logits_slice) => Some(softmax(logits_slice)),
+        None => {
+            eprintln!("Failed to get a slice of the logits.");
+            None
         }
-
-        // Find the digit with the highest probability
-        if let Some((predicted_digit, _)) = probabilities.iter().enumerate().max_by(|&(_, a), &(_, b)| a.partial_cmp(b).unwrap()) {
-            println!("Predicted digit: {}", predicted_digit);
-        } else {
-            println!("Could not determine the predicted digit.");
-        }
-    } else {
-        eprintln!("Failed to get a slice of the logits.");
     }
 }
 
@@ -116,4 +107,18 @@ fn softmax(logits: &[f32]) -> Vec<f32> {
 
     exps.iter_mut().for_each(|x| *x /= sum_exps);
     exps
+}
+
+fn log_probabilities(probabilities: &Vec<f32>) {
+    // Print probabilities for each digit
+    for (i, &prob) in probabilities.iter().enumerate() {
+        println!("Digit {}: Probability {:.6}", i, prob);
+    }
+
+    // Find the digit with the highest probability
+    if let Some((predicted_digit, _)) = probabilities.iter().enumerate().max_by(|&(_, a), &(_, b)| a.partial_cmp(b).unwrap()) {
+        println!("Predicted digit: {}", predicted_digit);
+    } else {
+        println!("Could not determine the predicted digit.");
+    }
 }
