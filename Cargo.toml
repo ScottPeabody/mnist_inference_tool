@@ -1,0 +1,11 @@
+[package]
+name = "mnist_inference_tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ort = "2.0.0-rc.2"
+image = "0.25.1"
+ndarray = "0.15.6"
+ordered-float = "4.2.1"
+clap = "4.5.9"
