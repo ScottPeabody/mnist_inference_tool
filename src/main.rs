@@ -1,6 +1,5 @@
 use ndarray::{Array, ArrayBase, ArrayViewD, Dim, OwnedRepr};
 use ort::{GraphOptimizationLevel, Session};
-use ordered_float::OrderedFloat;
 use std::time::Instant;
 use std::env;
 
@@ -74,45 +73,47 @@ fn preprocess_image(image_path: &str) -> ArrayBase<OwnedRepr<f32>, Dim<[usize; 4
     tensor
 }
 
-fn softmax(logits: &[f32]) -> Vec<f32> {
-    match logits.is_empty() {
-        true => Vec::new(),
-        false => {
-            let max_logit = logits.iter().copied().fold(f32::NEG_INFINITY, f32::max);
-            let mut exps = Vec::new();
-            let mut sum_exps = 0.0;
+fn postprocess(logits: ArrayViewD<f32>) {
+    if logits.shape() != [1, 10] {
+        eprintln!("Unexpected shape of logits: {:?}", logits.shape());
+        return;
+    }
 
-            for &logit in logits {
-                let exp_val = (logit - max_logit).exp();
-                exps.push(exp_val);
-                sum_exps += exp_val;
-            }
+    if let Some(logits) = logits.as_slice() {
+        // Calculate probabilities using softmax
+        let probabilities = softmax(logits);
 
-            exps.iter().map(|&x| x / sum_exps).collect()
+        // Print probabilities for each digit
+        for (i, &prob) in probabilities.iter().enumerate() {
+            println!("Digit {}: Probability {:.6}", i, prob);
         }
+
+        // Find the digit with the highest probability
+        if let Some((predicted_digit, _)) = probabilities.iter().enumerate().max_by(|&(_, a), &(_, b)| a.partial_cmp(b).unwrap()) {
+            println!("Predicted digit: {}", predicted_digit);
+        } else {
+            println!("Could not determine the predicted digit.");
+        }
+    } else {
+        eprintln!("Failed to get a slice of the logits.");
     }
 }
 
-fn postprocess(logits: ArrayViewD<f32>) {
-    match logits.shape() {
-        [1, 10] => logits.as_slice().map_or_else(
-            || eprintln!("Failed to get a slice of the logits."),
-            |logits| {
-                // Calculate probabilities using softmax
-                let probabilities = softmax(logits);
-
-                // Print probabilities for each digit
-                probabilities.iter().enumerate().for_each(|(i, &prob)| {
-                    println!("Digit {}: Probability {:.6}", i, prob);
-                });
-
-                // Find the digit with the highest probability
-                match probabilities.iter().enumerate().max_by_key(|&(_, &prob)| OrderedFloat(prob)) {
-                    Some((predicted_digit, _)) => println!("Predicted digit: {}", predicted_digit),
-                    None => println!("Could not determine the predicted digit."),
-                }
-            }
-        ),
-        _ => eprintln!("Unexpected shape of logits: {:?}", logits.shape()),
+fn softmax(logits: &[f32]) -> Vec<f32> {
+    if logits.is_empty() {
+        return Vec::new();
     }
+
+    let max_logit = logits.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+    let mut exps = Vec::with_capacity(logits.len());
+    let mut sum_exps = 0.0;
+
+    for &logit in logits {
+        let exp_val = (logit - max_logit).exp();
+        exps.push(exp_val);
+        sum_exps += exp_val;
+    }
+
+    exps.iter_mut().for_each(|x| *x /= sum_exps);
+    exps
 }

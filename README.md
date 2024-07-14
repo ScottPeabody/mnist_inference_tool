@@ -94,12 +94,12 @@ Digit 7: Probability 0.000000
 Digit 8: Probability 0.998993
 Digit 9: Probability 0.000000
 Predicted digit: 8
-Session Setup time: 15.97ms
-Preprocessing time: 595.90µs
-Inference time: 119.20µs
-Post-processing time: 1.11ms
-Aggregated Duration Without Setup: 1.83ms
-Total application runtime: 17.82ms
+Session Setup time: 15.89ms
+Preprocessing time: 613.90µs
+Inference time: 118.90µs
+Post-processing time: 851.20µs
+Aggregated Duration Without Setup: 1.58ms
+Total application runtime: 17.50ms
 ```
 ```plaintext
 Running `target\debug\mnist_inference_tool.exe ./test_digit_data/9/2.jpg`
@@ -115,10 +115,10 @@ Digit 7: Probability 0.000000
 Digit 8: Probability 0.000000
 Digit 9: Probability 0.999989
 Predicted digit: 9
-Session Setup time: 16.05ms
-Preprocessing time: 612.30µs
-Inference time: 128.20µs
-Post-processing time: 1.08ms
-Aggregated Duration Without Setup: 1.82ms
-Total application runtime: 17.89ms
+Session Setup time: 16.52ms
+Preprocessing time: 602.50µs
+Inference time: 139.10µs
+Post-processing time: 835.30µs
+Aggregated Duration Without Setup: 1.58ms
+Total application runtime: 18.12ms
 ```
