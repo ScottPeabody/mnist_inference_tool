@@ -21,7 +21,7 @@ fn main() -> ort::Result<()> {
     // Load and preprocess the image
     let image_path = &args[1];
     let preprocess_start = Instant::now();
-    let preprocessed = preprocess_image(image_path).expect("Failed to preprocess image");
+    let preprocessed = preprocess_image(image_path);
     let preprocess_duration = preprocess_start.elapsed();
 
     let inputs = ort::inputs! {
@@ -60,9 +60,9 @@ fn main() -> ort::Result<()> {
     Ok(())
 }
 
-fn preprocess_image(image_path: &str) -> Result<ArrayBase<OwnedRepr<f32>, Dim<[usize; 4]>>, Box<dyn std::error::Error>> {
+fn preprocess_image(image_path: &str) -> ArrayBase<OwnedRepr<f32>, Dim<[usize; 4]>> {
     // Load the image and resize directly to 28x28 grayscale
-    let img = image::open(image_path)?;
+    let img = image::open(image_path).unwrap();
     let resized = img.resize_exact(28, 28, image::imageops::FilterType::Triangle).into_luma8();
 
     // Initialize a new ndarray and populate it with pixel values
@@ -71,7 +71,7 @@ fn preprocess_image(image_path: &str) -> Result<ArrayBase<OwnedRepr<f32>, Dim<[u
         pixel_value
     });
 
-    Ok(tensor)
+    tensor
 }
 
 fn softmax(logits: &[f32]) -> Vec<f32> {
