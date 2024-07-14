@@ -20,8 +20,9 @@ fn main() -> ort::Result<()> {
 
     // Load and preprocess the image
     let image_path = &args[1];
+    let preprocess_start = Instant::now();
     let preprocessed = preprocess_image(image_path).expect("Failed to preprocess image");
-    let preprocess_duration = Instant::now().elapsed();
+    let preprocess_duration = preprocess_start.elapsed();
 
     let inputs = ort::inputs! {
         "Input3" => preprocessed
