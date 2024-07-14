@@ -81,7 +81,7 @@ The application prints various performance metrics and I am using to optimize th
 ## Example Output
 
 ```plaintext
- Running `target\debug\mnist_inference_tool.exe ./test_digit_data/8/6.jpg`
+Running `target\debug\mnist_inference_tool.exe ./test_digit_data/8/6.jpg`
 Logits: [[0.41888416, -6.7712946, 8.670402, 1.053951, -4.0479784, -0.7836626, -1.1376514, -14.303154, 15.571114, -1.3362999]], shape=[1, 10], strides=[10, 1], layout=CFcf (0xf), dynamic ndim=2
 Digit 0: Probability 0.000000
 Digit 1: Probability 0.000000
